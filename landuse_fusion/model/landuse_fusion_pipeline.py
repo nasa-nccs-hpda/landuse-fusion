@@ -59,54 +59,69 @@ class LandUseFusionPipeline():
 
     def compute_sheperd_segmentation(
                 self,
-                #filename: str,
-                #output_dir: str,
-                #num_clusters: int,
-                #min_n_pxls: int
+                filename: str,
+                output_filename: str,
+                num_clusters: int,
+                min_n_pxls: int
             ):
 
-        # TEMPORARY
-        output_dir = '/explore/nobackup/projects/3sl/labels/landuse/ethiopia_segmentation_experiments_v1'
-        os.makedirs(output_dir, exist_ok=True)
-
-        num_clusters = 60 #80
-        min_n_pxls = 500
-
-        for filename in [
-            '/panfs/ccds02/nobackup/people/walemu/NRO/WV02_20210322_M1BS_10300100BB4AF500-toa_RayaAlamata.tif',
-            '/panfs/ccds02/nobackup/people/walemu/NRO/WV02_20210322_M1BS_10300100BB4AF500-toa_RayaKorem.tif']:
-
-            output_filename = os.path.join(
-                output_dir,
-                f'{Path(filename).stem}-sheperd_k{num_clusters}_n{min_n_pxls}.tif')
-            print(output_filename)
-
-            if not os.path.isfile(output_filename):
-                shepherdseg.run_shepherd_segmentation(
-                #tiledsegsingle.perform_tiled_segmentation(
-                    filename,
-                    output_filename,
-                    num_clusters=num_clusters,
-                    min_n_pxls=min_n_pxls,
-                    #minPxls=1000,
-                    #tile_width=1000,
-                    #tile_height=1000,
-                    #calc_stats=True,
-                    dist_thres=10000,
-                    gdalformat='GTiff',
-                    process_in_mem=True,
-                    tmp_dir='/explore/nobackup/projects/ilab/tmp'
-                )
-                #raster_to_vector(output_filename, output_filename.with_suffix('.gpkg'))
+        if not os.path.isfile(output_filename):
+            shepherdseg.run_shepherd_segmentation(
+            #tiledsegsingle.perform_tiled_segmentation(
+                filename,
+                output_filename,
+                num_clusters=num_clusters,
+                min_n_pxls=min_n_pxls,
+                #minPxls=1000,
+                #tile_width=1000,
+                #tile_height=1000,
+                #calc_stats=True,
+                dist_thres=10000,
+                gdalformat='GTiff',
+                process_in_mem=True,
+                tmp_dir='/explore/nobackup/projects/ilab/tmp'
+            )
+            #raster_to_vector(output_filename, output_filename.with_suffix('.gpkg'))
         return
     
+    def compute_polygons(               
+                self,
+                filename: str,
+                output_filename: str
+            ):
+        if not os.path.exists(output_filename):
+            os.system(f'python gdal_polygonize.py -f GPKG {filename} {output_filename}')
+
 def main():
+
+    # This whole main will be removed at a later time and be
+    # replaced with the CLI script.
 
     # define the landuse object
     landuse_fusion_pipeline = LandUseFusionPipeline()
 
-    # compute sheperd segmentation
-    landuse_fusion_pipeline.compute_sheperd_segmentation()
+    # TEMPORARY
+    output_dir = '/explore/nobackup/projects/3sl/labels/landuse/ethiopia_segmentation_experiments_v1'
+    os.makedirs(output_dir, exist_ok=True)
+
+    num_clusters = 60 #80
+    min_n_pxls = 500
+
+    for filename in [
+        '/panfs/ccds02/nobackup/people/walemu/NRO/WV02_20210322_M1BS_10300100BB4AF500-toa_RayaAlamata.tif',
+        '/panfs/ccds02/nobackup/people/walemu/NRO/WV02_20210322_M1BS_10300100BB4AF500-toa_RayaKorem.tif']:
+
+        # compute sheperd segmentation
+        # TODO: add the arguments to the function
+        output_filename_segmentation = os.path.join(
+            output_dir,
+            f'{Path(filename).stem}-sheperd_k{num_clusters}_n{min_n_pxls}.tif')
+        # landuse_fusion_pipeline.compute_sheperd_segmentation()
+
+        # polygonize
+        output_filename_polygon = os.path.join(output_dir, f'{Path(filename).stem}.gpkg')
+        landuse_fusion_pipeline.compute_polygons(
+            output_filename_segmentation, output_filename_polygon)
 
     return
 
